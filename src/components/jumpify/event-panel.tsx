@@ -1,9 +1,11 @@
+import { useEffect, useState } from "react";
 import { ExternalLink, X } from "lucide-react";
 import {
   categoryMeta,
   formatUtcDateTime,
   type JumpifyEvent,
 } from "@/lib/events";
+import { findCountryName } from "@/lib/country-lookup";
 
 type EventPanelProps = {
   event: JumpifyEvent;
@@ -16,6 +18,22 @@ type EventPanelProps = {
  */
 export function EventPanel({ event, onClose }: EventPanelProps) {
   const meta = categoryMeta(event.category);
+  const [country, setCountry] = useState<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    setCountry(undefined);
+    findCountryName(event.centroid[0], event.centroid[1])
+      .then((name) => {
+        if (!cancelled) setCountry(name);
+      })
+      .catch(() => {
+        /* country lookup is best-effort */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [event.id, event.centroid]);
 
   return (
     <aside
@@ -62,6 +80,16 @@ export function EventPanel({ event, onClose }: EventPanelProps) {
               Status
             </dt>
             <dd className="mt-0.5">{event.closed ? "Closed" : "Active"}</dd>
+          </div>
+          <div>
+            <dt className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
+              Location
+            </dt>
+            <dd className="mt-0.5">
+              {country === undefined
+                ? "…"
+                : (country ?? "Open water / international")}
+            </dd>
           </div>
           {event.magnitudeValue !== null && (
             <div>
