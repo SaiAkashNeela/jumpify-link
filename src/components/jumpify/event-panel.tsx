@@ -1,9 +1,11 @@
+import { useEffect, useState } from "react";
 import { ExternalLink, X } from "lucide-react";
 import {
   categoryMeta,
   formatUtcDateTime,
   type JumpifyEvent,
 } from "@/lib/events";
+import { findCountryName } from "@/lib/country-lookup";
 
 type EventPanelProps = {
   event: JumpifyEvent;
@@ -16,6 +18,22 @@ type EventPanelProps = {
  */
 export function EventPanel({ event, onClose }: EventPanelProps) {
   const meta = categoryMeta(event.category);
+  const [country, setCountry] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setCountry(null);
+    findCountryName(event.centroid[0], event.centroid[1])
+      .then((name) => {
+        if (!cancelled) setCountry(name);
+      })
+      .catch(() => {
+        /* country lookup is best-effort */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [event.id, event.centroid]);
 
   return (
     <aside
