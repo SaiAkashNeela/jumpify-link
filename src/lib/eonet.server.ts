@@ -2,7 +2,7 @@ import type { Geometry } from "geojson";
 import { CATEGORY_META, categoryMeta, OTHER_CATEGORY, type JumpifyEvent } from "./events";
 
 const EONET_URL =
-  "https://eonet.gsfc.nasa.gov/api/v3/events/geojson?status=open&days=1";
+  "https://eonet.gsfc.nasa.gov/api/v3/events/geojson?status=open&days=7";
 
 const ALLOWED_GEOMETRY_TYPES = new Set([
   "Point",
