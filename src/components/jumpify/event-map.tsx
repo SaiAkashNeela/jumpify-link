@@ -32,10 +32,13 @@ export type FocusRequest = { id: string; nonce: number };
 function oklchToHex(value: string): string | null {
   const m = value.match(/oklch\(\s*([\d.]+%?)\s+([\d.]+)\s+([\d.]+)/);
   if (!m) return null;
-  let L = parseFloat(m[1]);
-  if (m[1].endsWith("%")) L /= 100;
-  const C = parseFloat(m[2]);
-  const H = (parseFloat(m[3]) * Math.PI) / 180;
+  const lStr = m[1] ?? "";
+  const cStr = m[2] ?? "0";
+  const hStr = m[3] ?? "0";
+  let L = parseFloat(lStr);
+  if (lStr.endsWith("%")) L /= 100;
+  const C = parseFloat(cStr);
+  const H = (parseFloat(hStr) * Math.PI) / 180;
   const a = C * Math.cos(H);
   const b = C * Math.sin(H);
   const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
