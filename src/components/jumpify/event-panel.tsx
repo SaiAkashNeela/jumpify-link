@@ -18,11 +18,11 @@ type EventPanelProps = {
  */
 export function EventPanel({ event, onClose }: EventPanelProps) {
   const meta = categoryMeta(event.category);
-  const [country, setCountry] = useState<string | null>(null);
+  const [country, setCountry] = useState<string | null | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
-    setCountry(null);
+    setCountry(undefined);
     findCountryName(event.centroid[0], event.centroid[1])
       .then((name) => {
         if (!cancelled) setCountry(name);
@@ -86,7 +86,9 @@ export function EventPanel({ event, onClose }: EventPanelProps) {
               Location
             </dt>
             <dd className="mt-0.5">
-              {country ?? "Open water / international"}
+              {country === undefined
+                ? "…"
+                : (country ?? "Open water / international")}
             </dd>
           </div>
           {event.magnitudeValue !== null && (
