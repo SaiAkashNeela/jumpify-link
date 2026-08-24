@@ -25,6 +25,36 @@ type CategoryBuckets = {
 
 export type FocusRequest = { id: string; nonce: number };
 
+/**
+ * MapLibre paint properties only accept hex/rgb colors, but our design
+ * tokens are oklch(). Convert an oklch() CSS string to #rrggbb.
+ */
+function oklchToHex(value: string): string | null {
+  const m = value.match(/oklch\(\s*([\d.]+%?)\s+([\d.]+)\s+([\d.]+)/);
+  if (!m) return null;
+  let L = parseFloat(m[1]);
+  if (m[1].endsWith("%")) L /= 100;
+  const C = parseFloat(m[2]);
+  const H = (parseFloat(m[3]) * Math.PI) / 180;
+  const a = C * Math.cos(H);
+  const b = C * Math.sin(H);
+  const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
+  const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
+  const s_ = L - 0.0894841775 * a - 1.291485548 * b;
+  const l = l_ ** 3;
+  const m2 = m_ ** 3;
+  const s = s_ ** 3;
+  const r = +4.0767416621 * l - 3.3077115913 * m2 + 0.2309699292 * s;
+  const g = -1.2684380046 * l + 2.6097574011 * m2 - 0.3413193965 * s;
+  const b2 = -0.0041960863 * l - 0.7034186147 * m2 + 1.707614701 * s;
+  const toSrgb = (x: number) => {
+    const c = x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055;
+    return Math.round(Math.min(1, Math.max(0, c)) * 255);
+  };
+  const hex = (n: number) => n.toString(16).padStart(2, "0");
+  return `#${hex(toSrgb(r))}${hex(toSrgb(g))}${hex(toSrgb(b2))}`;
+}
+
 type EventMapProps = {
   events: JumpifyEvent[];
   selectedId: string | null;
@@ -52,8 +82,8 @@ export default function EventMap({
   });
   useEffect(() => {
     const styles = getComputedStyle(document.documentElement);
-    const land = styles.getPropertyValue("--land").trim();
-    const border = styles.getPropertyValue("--land-border").trim();
+    const land = oklchToHex(styles.getPropertyValue("--land").trim());
+    const border = oklchToHex(styles.getPropertyValue("--land-border").trim());
     if (land && border) setLandColors({ land, border });
   }, []);
 
