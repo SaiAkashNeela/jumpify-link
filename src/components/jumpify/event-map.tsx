@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef } from "react";
 import type { FeatureCollection, Point } from "geojson";
 import {
-  Map,
+  Map as MapView,
   MapControls,
   MapGeoJSON,
   MapClusterLayer,
@@ -97,7 +97,7 @@ export default function EventMap({
   }, [focusRequest, events]);
 
   return (
-    <Map
+    <MapView
       ref={mapRef}
       blank
       projection={{ type: "globe" }}
