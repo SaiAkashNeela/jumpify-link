@@ -100,9 +100,8 @@ export default function EventMap({
     <MapView
       ref={mapRef}
       blank
-      projection={{ type: "globe" }}
-      center={[10, 32]}
-      zoom={1.45}
+      center={[10, 25]}
+      zoom={1.3}
       minZoom={0.9}
       maxZoom={12}
       attributionControl={false}
@@ -111,8 +110,8 @@ export default function EventMap({
       {/* Geographic context: Natural Earth country boundaries */}
       <MapGeoJSON
         data="/data/countries.geojson"
-        fillPaint={{ "fill-color": "#e6e4da", "fill-opacity": 1 }}
-        linePaint={{ "line-color": "#c2c4ba", "line-width": 0.6 }}
+        fillPaint={{ "fill-color": "#2c3542", "fill-opacity": 1 }}
+        linePaint={{ "line-color": "#46536a", "line-width": 0.6 }}
       />
 
       {[...byCategory.entries()].map(([cat, bucket]) => {
