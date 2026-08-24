@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import type { FeatureCollection, Point } from "geojson";
 import {
   Map as MapView,
@@ -44,6 +44,18 @@ export default function EventMap({
   focusRequest,
 }: EventMapProps) {
   const mapRef = useRef<MapRef>(null);
+
+  // Land colors come from CSS design tokens so the map follows the theme.
+  const [landColors, setLandColors] = useState({
+    land: "#f2f0ea",
+    border: "#9aa5b1",
+  });
+  useEffect(() => {
+    const styles = getComputedStyle(document.documentElement);
+    const land = styles.getPropertyValue("--land").trim();
+    const border = styles.getPropertyValue("--land-border").trim();
+    if (land && border) setLandColors({ land, border });
+  }, []);
 
   const byCategory = useMemo(() => {
     const buckets = new Map<string, CategoryBuckets>();
@@ -107,11 +119,17 @@ export default function EventMap({
       attributionControl={false}
       className="h-full w-full"
     >
-      {/* Geographic context: Natural Earth country boundaries */}
+      {/* Geographic context: Natural Earth 50m country boundaries
+          (includes small island nations) + minor islands/islets layer */}
       <MapGeoJSON
         data="/data/countries.geojson"
-        fillPaint={{ "fill-color": "#2c3542", "fill-opacity": 1 }}
-        linePaint={{ "line-color": "#46536a", "line-width": 0.6 }}
+        fillPaint={{ "fill-color": landColors.land, "fill-opacity": 1 }}
+        linePaint={{ "line-color": landColors.border, "line-width": 0.6 }}
+      />
+      <MapGeoJSON
+        data="/data/minor-islands.geojson"
+        fillPaint={{ "fill-color": landColors.land, "fill-opacity": 1 }}
+        linePaint={{ "line-color": landColors.border, "line-width": 0.4 }}
       />
 
       {[...byCategory.entries()].map(([cat, bucket]) => {
