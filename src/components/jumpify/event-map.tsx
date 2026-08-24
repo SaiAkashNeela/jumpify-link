@@ -101,8 +101,8 @@ export default function EventMap({
       ref={mapRef}
       blank
       projection={{ type: "globe" }}
-      center={[10, 30]}
-      zoom={1.1}
+      center={[10, 32]}
+      zoom={1.45}
       minZoom={0.9}
       maxZoom={12}
       attributionControl={false}
