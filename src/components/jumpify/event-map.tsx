@@ -132,7 +132,7 @@ export default function EventMap({
                   "line-width": 1.2,
                   "line-opacity": 0.7,
                 }}
-                onClick={(e) => onSelect(e.feature.properties?.id ?? null)}
+                onClick={(e) => onSelect(e.feature.properties?.["id"] ?? null)}
               />
             )}
             {bucket.points.features.length > 0 && (
@@ -144,7 +144,7 @@ export default function EventMap({
                 clusterThresholds={[10, 40]}
                 pointColor={meta.color}
                 onPointClick={(feature) =>
-                  onSelect(feature.properties?.id ?? null)
+                  onSelect(feature.properties?.["id"] ?? null)
                 }
               />
             )}
@@ -170,6 +170,6 @@ export default function EventMap({
       )}
 
       <MapControls position="bottom-right" showCompass={false} />
-    </Map>
+    </MapView>
   );
 }
