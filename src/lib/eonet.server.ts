@@ -1,5 +1,5 @@
 import type { Geometry } from "geojson";
-import { CATEGORY_META, OTHER_CATEGORY, type JumpifyEvent } from "./events";
+import { CATEGORY_META, categoryMeta, OTHER_CATEGORY, type JumpifyEvent } from "./events";
 
 const EONET_URL =
   "https://eonet.gsfc.nasa.gov/api/v3/events/geojson?status=open&days=1";
@@ -46,7 +46,10 @@ function coordinatesAreValid(coords: unknown): boolean {
 /** Recursively collect [lng, lat] positions from any GeoJSON coordinates. */
 function collectPositions(coords: unknown, out: [number, number][]): void {
   if (isFiniteNumberArray(coords)) {
-    out.push([coords[0], coords[1]]);
+    const [lng, lat] = coords;
+    if (typeof lng === "number" && typeof lat === "number") {
+      out.push([lng, lat]);
+    }
     return;
   }
   if (Array.isArray(coords)) {
@@ -96,7 +99,7 @@ function normalizeFeature(feature: EonetFeature): JumpifyEvent | null {
   const categoryTitle = known
     ? typeof rawCategory?.title === "string" && rawCategory.title
       ? rawCategory.title
-      : CATEGORY_META[category].short
+      : categoryMeta(category).short
     : "Other";
 
   const source = props.sources?.[0];

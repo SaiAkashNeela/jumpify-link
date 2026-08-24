@@ -48,6 +48,14 @@ export const OTHER_CATEGORY = "other";
  * Category palette keyed by EONET v3 category id. Unknown categories fall
  * back to "other". Colors are data-viz semantics (like chart tokens).
  */
+const OTHER_META: CategoryMeta = {
+  id: OTHER_CATEGORY,
+  label: "Other",
+  short: "Other",
+  color: "#6f7780",
+  cluster: ["#6f7780", "#535a61", "#373c41"],
+};
+
 export const CATEGORY_META: Record<string, CategoryMeta> = {
   wildfires: {
     id: "wildfires",
@@ -98,17 +106,11 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
     color: "#b5892e",
     cluster: ["#b5892e", "#8a6822", "#5c4516"],
   },
-  [OTHER_CATEGORY]: {
-    id: OTHER_CATEGORY,
-    label: "Other",
-    short: "Other",
-    color: "#6f7780",
-    cluster: ["#6f7780", "#535a61", "#373c41"],
-  },
+  [OTHER_CATEGORY]: OTHER_META,
 };
 
 export function categoryMeta(id: string): CategoryMeta {
-  return CATEGORY_META[id] ?? CATEGORY_META[OTHER_CATEGORY];
+  return CATEGORY_META[id] ?? OTHER_META;
 }
 
 export function isPointGeometry(g: Geometry): boolean {
