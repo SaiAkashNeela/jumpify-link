@@ -81,6 +81,14 @@ export function EventPanel({ event, onClose }: EventPanelProps) {
             </dt>
             <dd className="mt-0.5">{event.closed ? "Closed" : "Active"}</dd>
           </div>
+          <div>
+            <dt className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
+              Location
+            </dt>
+            <dd className="mt-0.5">
+              {country ?? "Open water / international"}
+            </dd>
+          </div>
           {event.magnitudeValue !== null && (
             <div>
               <dt className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
