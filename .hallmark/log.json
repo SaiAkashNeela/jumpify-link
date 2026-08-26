@@ -1,0 +1,11 @@
+[
+  {
+    "date": "2026-08-27",
+    "macrostructure": "Map / Diagram",
+    "theme": "custom",
+    "theme_axes": "dual-paper / grotesk-sans / warm",
+    "vibe": "night-ops globe, warm paper HUD",
+    "enrichment": "none",
+    "brief": "Jumpify live globe HUD"
+  }
+]

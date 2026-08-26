@@ -1,16 +1,19 @@
-import type { Geometry } from "geojson";
+export const MODES = ["orbit", "pulse", "listen"] as const;
+export type Mode = (typeof MODES)[number];
 
-/**
- * Normalized natural-event model consumed by the Jumpify frontend.
- * Source adapters (NASA EONET today, USGS etc. later) map into this shape.
- */
+export function isMode(value: string | null | undefined): value is Mode {
+  return value === "orbit" || value === "pulse" || value === "listen";
+}
+
+export type ThemeChoice = "system" | "light" | "dark";
+export const THEME_STORAGE_KEY = "jumpify_theme_v1";
+
 export type JumpifyEvent = {
   id: string;
   title: string;
   category: string;
   categoryTitle: string;
-  geometry: Geometry;
-  /** [longitude, latitude] — bbox center of the geometry, for focus/popup. */
+  geometry: GeoJSON.Geometry;
   centroid: [number, number];
   date: string;
   closed: string | null;
@@ -23,89 +26,94 @@ export type JumpifyEvent = {
 
 export type EventsPayload = {
   events: JumpifyEvent[];
-  /** ISO timestamp of the last successful upstream refresh. */
   refreshedAt: string;
-  /** True when the upstream refresh failed and this is a previous snapshot. */
   stale: boolean;
   count: number;
 };
 
+export type Quake = {
+  id: string;
+  mag: number | null;
+  place: string;
+  time: number;
+  lng: number;
+  lat: number;
+  depth: number | null;
+  url: string | null;
+};
+
+export type QuakesPayload = {
+  quakes: Quake[];
+  refreshedAt: string;
+  stale: boolean;
+};
+
+export type IssPayload = {
+  latitude: number;
+  longitude: number;
+  altitude: number;
+  velocity: number;
+  timestamp: number;
+  visibility: string;
+};
+
+export type RadioStation = {
+  id: string;
+  name: string;
+  lng: number;
+  lat: number;
+  country: string;
+  tags: string;
+  bitrate: number;
+  stream: string;
+  homepage: string | null;
+};
+
+export type RadioPayload = {
+  stations: RadioStation[];
+  refreshedAt: string;
+  stale: boolean;
+};
+
+export type PlacePayload = {
+  name: string;
+  country: string | null;
+  timezone: string;
+  localTime: string;
+  weather: {
+    temperature: number | null;
+    windspeed: number | null;
+    weathercode: number | null;
+    isDay: boolean | null;
+  } | null;
+  wiki: { title: string; extract: string; url: string } | null;
+  aqi: number | null;
+};
+
 export type CategoryMeta = {
   id: string;
-  /** Singular label, e.g. "Wildfire" */
   label: string;
-  /** Plural chip label, e.g. "Wildfires" */
   short: string;
-  /** Base color (hex — required by MapLibre paint props). */
   color: string;
-  /** Cluster circle colors: [small, medium, large]. */
-  cluster: [string, string, string];
 };
 
 export const OTHER_CATEGORY = "other";
 
-/**
- * Category palette keyed by EONET v3 category id. Unknown categories fall
- * back to "other". Colors are data-viz semantics (like chart tokens).
- */
 const OTHER_META: CategoryMeta = {
   id: OTHER_CATEGORY,
   label: "Other",
   short: "Other",
   color: "#9aa4ad",
-  cluster: ["#9aa4ad", "#6f7880", "#4a5158"],
 };
 
 export const CATEGORY_META: Record<string, CategoryMeta> = {
-  wildfires: {
-    id: "wildfires",
-    label: "Wildfire",
-    short: "Wildfires",
-    color: "#f2682e",
-    cluster: ["#f2682e", "#c74d1a", "#8f360e"],
-  },
-  severeStorms: {
-    id: "severeStorms",
-    label: "Severe Storm",
-    short: "Storms",
-    color: "#6ea3dd",
-    cluster: ["#6ea3dd", "#4a7cb8", "#2f5682"],
-  },
-  volcanoes: {
-    id: "volcanoes",
-    label: "Volcano",
-    short: "Volcanoes",
-    color: "#e05a4c",
-    cluster: ["#e05a4c", "#b53e32", "#822920"],
-  },
-  floods: {
-    id: "floods",
-    label: "Flood",
-    short: "Floods",
-    color: "#58a6e8",
-    cluster: ["#58a6e8", "#3a80bd", "#265a87"],
-  },
-  landslides: {
-    id: "landslides",
-    label: "Landslide",
-    short: "Landslides",
-    color: "#d0a45c",
-    cluster: ["#d0a45c", "#a67f3e", "#755a28"],
-  },
-  seaLakeIce: {
-    id: "seaLakeIce",
-    label: "Sea/Lake Ice",
-    short: "Ice",
-    color: "#5cc6de",
-    cluster: ["#5cc6de", "#3a9cb4", "#267181"],
-  },
-  earthquakes: {
-    id: "earthquakes",
-    label: "Earthquake",
-    short: "Earthquakes",
-    color: "#e0b44e",
-    cluster: ["#e0b44e", "#b58c2e", "#7f6320"],
-  },
+  wildfires: { id: "wildfires", label: "Wildfire", short: "Wildfires", color: "#e07832" },
+  severeStorms: { id: "severeStorms", label: "Storm", short: "Storms", color: "#5b8fd4" },
+  volcanoes: { id: "volcanoes", label: "Volcano", short: "Volcanoes", color: "#d45a46" },
+  floods: { id: "floods", label: "Flood", short: "Floods", color: "#4a96d4" },
+  landslides: { id: "landslides", label: "Landslide", short: "Landslides", color: "#c4924a" },
+  seaLakeIce: { id: "seaLakeIce", label: "Ice", short: "Ice", color: "#4eb4c8" },
+  earthquakes: { id: "earthquakes", label: "Quake", short: "Quakes", color: "#d4a03c" },
   [OTHER_CATEGORY]: OTHER_META,
 };
 
@@ -113,26 +121,8 @@ export function categoryMeta(id: string): CategoryMeta {
   return CATEGORY_META[id] ?? OTHER_META;
 }
 
-export function isPointGeometry(g: Geometry): boolean {
-  return g.type === "Point" || g.type === "MultiPoint";
-}
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-const MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-
-/** "24 Aug 2026 · 18:42 UTC" */
 export function formatUtcDateTime(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
@@ -141,7 +131,6 @@ export function formatUtcDateTime(iso: string): string {
   return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()} · ${hh}:${mm} UTC`;
 }
 
-/** "just now" / "12 min ago" / "3 hr ago" / "2 d ago" */
 export function formatRelativeTime(iso: string, now = Date.now()): string {
   const t = new Date(iso).getTime();
   if (Number.isNaN(t)) return "";
@@ -153,3 +142,21 @@ export function formatRelativeTime(iso: string, now = Date.now()): string {
   if (hr < 24) return `${hr} hr ago`;
   return `${Math.floor(hr / 24)} d ago`;
 }
+
+export function weatherLabel(code: number | null): string {
+  if (code === null) return "Unknown";
+  if (code === 0) return "Clear";
+  if (code <= 3) return "Clouds";
+  if (code <= 48) return "Fog";
+  if (code <= 67) return "Rain";
+  if (code <= 77) return "Snow";
+  if (code <= 82) return "Showers";
+  if (code <= 86) return "Snow showers";
+  return "Storm";
+}
+
+export const MODE_COPY: Record<Mode, { label: string; line: string }> = {
+  orbit: { label: "Orbit", line: "ISS, day/night, the planet spinning." },
+  pulse: { label: "Pulse", line: "Quakes and named events — optional overlay." },
+  listen: { label: "Listen", line: "World radio. Tap a station, hear a city." },
+};

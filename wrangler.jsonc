@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "jumpify-link",
+  "compatibility_date": "2025-09-02",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "@tanstack/react-start/server-entry",
+  "workers_dev": true,
+  "preview_urls": true,
+  "assets": {
+    "run_worker_first": true
+  },
+  "routes": [
+    { "pattern": "jumpify.link", "custom_domain": true },
+    { "pattern": "www.jumpify.link", "custom_domain": true }
+  ]
+}

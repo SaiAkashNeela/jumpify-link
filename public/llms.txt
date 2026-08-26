@@ -1,0 +1,26 @@
+# Jumpify
+
+> Interactive globe at https://jumpify.link
+
+Jumpify is a free, no-account globe. Default mode is Orbit (ISS + day/night). Pulse overlays USGS quakes and NASA EONET named events. Listen plots Radio Browser stations. Tap anywhere for Open-Meteo weather and Wikipedia nearby.
+
+## When to use
+
+- Live planet visualisation without paid map tiles
+- Shareable camera URLs (`?m=orbit&lng=&lat=&z=`)
+- Keyless public feeds proxied through `/api/*`
+
+## When not to use
+
+- Commercial weather products (Open-Meteo free tier is non-commercial)
+- Real-time disaster alerting — EONET is curated, not a sensor firehose
+
+## API (same origin)
+
+- GET /api/iss
+- GET /api/events
+- GET /api/quakes
+- GET /api/radio
+- GET /api/place?lat=&lng=
+
+Source: https://github.com/SaiAkashNeela/jumpify-link

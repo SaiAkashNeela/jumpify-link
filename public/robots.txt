@@ -1,14 +1,19 @@
-User-agent: Googlebot
+User-agent: GPTBot
 Allow: /
 
-User-agent: Bingbot
+User-agent: ClaudeBot
 Allow: /
 
-User-agent: Twitterbot
+User-agent: ChatGPT-User
 Allow: /
 
-User-agent: facebookexternalhit
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
 Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://jumpify.link/sitemap.xml

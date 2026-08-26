@@ -1,0 +1,19 @@
+/* Hallmark · Jumpify tokens — import from src/styles.css conceptually; values live there. */
+:root {
+  --color-paper: oklch(96.4% 0.012 78);
+  --color-paper-2: oklch(93.8% 0.014 78);
+  --color-ink: oklch(22% 0.028 248);
+  --color-muted: oklch(46% 0.02 248);
+  --color-rule: oklch(82% 0.018 78);
+  --color-accent: oklch(62% 0.17 55);
+  --color-focus: oklch(55% 0.19 55);
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-short: 220ms;
+  --radius-lg: 16px;
+}

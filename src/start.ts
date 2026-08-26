@@ -1,6 +1,14 @@
 import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/react-start";
-
 import { renderErrorPage } from "./lib/error-page";
+
+const wwwRedirect = createMiddleware().server(async ({ next, request }) => {
+  const url = new URL(request.url);
+  if (url.hostname === "www.jumpify.link") {
+    url.hostname = "jumpify.link";
+    return Response.redirect(url.toString(), 301);
+  }
+  return next();
+});
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
   try {
@@ -17,13 +25,10 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
   }
 });
 
-// Start installs this automatically when src/start.ts is absent; defining the
-// file opts out, so re-add it explicitly to keep server functions protected
-// from cross-site requests.
 const csrfMiddleware = createCsrfMiddleware({
   filter: (ctx) => ctx.handlerType === "serverFn",
 });
 
 export const startInstance = createStart(() => ({
-  requestMiddleware: [errorMiddleware, csrfMiddleware],
+  requestMiddleware: [wwwRedirect, errorMiddleware, csrfMiddleware],
 }));

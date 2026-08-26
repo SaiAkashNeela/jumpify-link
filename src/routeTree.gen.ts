@@ -10,11 +10,21 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as ApiEventsRouteImport } from './routes/api/events'
+import { Route as ApiIssRouteImport } from './routes/api/iss'
+import { Route as ApiPlaceRouteImport } from './routes/api/place'
+import { Route as ApiQuakesRouteImport } from './routes/api/quakes'
+import { Route as ApiRadioRouteImport } from './routes/api/radio'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiEventsRoute = ApiEventsRouteImport.update({
@@ -22,31 +32,93 @@ const ApiEventsRoute = ApiEventsRouteImport.update({
   path: '/api/events',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiIssRoute = ApiIssRouteImport.update({
+  id: '/api/iss',
+  path: '/api/iss',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPlaceRoute = ApiPlaceRouteImport.update({
+  id: '/api/place',
+  path: '/api/place',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiQuakesRoute = ApiQuakesRouteImport.update({
+  id: '/api/quakes',
+  path: '/api/quakes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRadioRoute = ApiRadioRouteImport.update({
+  id: '/api/radio',
+  path: '/api/radio',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/api/events': typeof ApiEventsRoute
+  '/api/iss': typeof ApiIssRoute
+  '/api/place': typeof ApiPlaceRoute
+  '/api/quakes': typeof ApiQuakesRoute
+  '/api/radio': typeof ApiRadioRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/api/events': typeof ApiEventsRoute
+  '/api/iss': typeof ApiIssRoute
+  '/api/place': typeof ApiPlaceRoute
+  '/api/quakes': typeof ApiQuakesRoute
+  '/api/radio': typeof ApiRadioRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/api/events': typeof ApiEventsRoute
+  '/api/iss': typeof ApiIssRoute
+  '/api/place': typeof ApiPlaceRoute
+  '/api/quakes': typeof ApiQuakesRoute
+  '/api/radio': typeof ApiRadioRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/events'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/api/events'
+    | '/api/iss'
+    | '/api/place'
+    | '/api/quakes'
+    | '/api/radio'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/events'
-  id: '__root__' | '/' | '/api/events'
+  to:
+    | '/'
+    | '/about'
+    | '/api/events'
+    | '/api/iss'
+    | '/api/place'
+    | '/api/quakes'
+    | '/api/radio'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/api/events'
+    | '/api/iss'
+    | '/api/place'
+    | '/api/quakes'
+    | '/api/radio'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
   ApiEventsRoute: typeof ApiEventsRoute
+  ApiIssRoute: typeof ApiIssRoute
+  ApiPlaceRoute: typeof ApiPlaceRoute
+  ApiQuakesRoute: typeof ApiQuakesRoute
+  ApiRadioRoute: typeof ApiRadioRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -58,6 +130,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/events': {
       id: '/api/events'
       path: '/api/events'
@@ -65,12 +144,45 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/iss': {
+      id: '/api/iss'
+      path: '/api/iss'
+      fullPath: '/api/iss'
+      preLoaderRoute: typeof ApiIssRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/place': {
+      id: '/api/place'
+      path: '/api/place'
+      fullPath: '/api/place'
+      preLoaderRoute: typeof ApiPlaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/quakes': {
+      id: '/api/quakes'
+      path: '/api/quakes'
+      fullPath: '/api/quakes'
+      preLoaderRoute: typeof ApiQuakesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/radio': {
+      id: '/api/radio'
+      path: '/api/radio'
+      fullPath: '/api/radio'
+      preLoaderRoute: typeof ApiRadioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   ApiEventsRoute: ApiEventsRoute,
+  ApiIssRoute: ApiIssRoute,
+  ApiPlaceRoute: ApiPlaceRoute,
+  ApiQuakesRoute: ApiQuakesRoute,
+  ApiRadioRoute: ApiRadioRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

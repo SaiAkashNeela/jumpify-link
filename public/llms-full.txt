@@ -1,0 +1,18 @@
+# Jumpify — full context
+
+Jumpify.link is an open-source interactive globe.
+
+Stack: TanStack Start (React 19) + MapLibre GL JS globe projection, deployed as a Cloudflare Worker.
+
+Modes:
+1. Orbit — ISS position from Where The ISS At (`/v1/satellites/25544`), night-side polygon from a subsolar approximation, CARTO basemap.
+2. Pulse — USGS GeoJSON feed `2.5_day`, NASA EONET v3 `events/geojson?status=open&days=7` (optional overlay, not the homepage).
+3. Listen — Radio Browser `stations/search?has_geo_info=true`.
+
+Inspector: Open-Meteo forecast + air-quality, Wikipedia geosearch.
+
+All upstream calls happen on the Worker. Browser only talks to `/api/*`. In-memory cache with TTLs (ISS 4s, EONET 3min, quakes 60s, radio 10min, place 10min).
+
+Theme: system / light / dark, persisted as `jumpify_theme_v1`.
+
+No database. No auth. No paid APIs.

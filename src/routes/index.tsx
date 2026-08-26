@@ -1,237 +1,198 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ClientOnly } from "@tanstack/react-router";
+import { createFileRoute, ClientOnly } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { Hud } from "@/components/jumpify/hud";
+import { DetailSheet } from "@/components/jumpify/detail-sheet";
+import { RadioBar } from "@/components/jumpify/radio-bar";
+import { Credits } from "@/components/jumpify/credits";
+import { useNow } from "@/hooks/use-now";
+import { useTheme } from "@/hooks/use-theme";
+import { parseShare } from "@/lib/share";
+import { resolveDark } from "@/lib/theme";
 import {
   formatRelativeTime,
+  isMode,
   type EventsPayload,
+  type IssPayload,
+  type Mode,
+  type QuakesPayload,
+  type RadioPayload,
+  type RadioStation,
 } from "@/lib/events";
-import { FilterBar } from "@/components/jumpify/filter-bar";
-import { RecentEvents } from "@/components/jumpify/recent-events";
-import { EventPanel } from "@/components/jumpify/event-panel";
-import type { FocusRequest } from "@/components/jumpify/event-map";
+import type { InspectTarget } from "@/components/jumpify/globe";
 
-const EventMap = lazy(() => import("@/components/jumpify/event-map"));
+const Globe = lazy(() => import("@/components/jumpify/globe"));
 
-async function fetchEvents(): Promise<EventsPayload> {
-  const res = await fetch("/api/events");
-  if (!res.ok) throw new Error(`Events request failed (${res.status})`);
-  return res.json();
+async function getJson<T>(url: string): Promise<T> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${url} failed (${res.status})`);
+  return res.json() as Promise<T>;
 }
 
-function useNow(intervalMs = 30_000): number {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), intervalMs);
-    return () => clearInterval(t);
-  }, [intervalMs]);
-  return now;
+function MapFallback() {
+  return (
+    <div className="flex h-full w-full items-center justify-center bg-ocean">
+      <p className="px-6 text-center text-sm text-muted">Spinning up the globe…</p>
+    </div>
+  );
 }
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Jumpify — Natural Events Happening Around the World" },
+      { title: "Jumpify — poke the live planet" },
       {
         name: "description",
         content:
-          "Explore wildfires, storms, volcanoes, floods and other natural events happening around the world on a live interactive map.",
+          "An interactive globe for ISS orbit, earthquakes, named natural events, world radio, and tap-anywhere weather. Free, no account.",
       },
-      {
-        property: "og:title",
-        content: "Jumpify — Natural Events Happening Around the World",
-      },
+      { property: "og:title", content: "Jumpify — poke the live planet" },
       {
         property: "og:description",
         content:
-          "Explore wildfires, storms, volcanoes, floods and other natural events happening around the world on a live interactive map.",
+          "Spin a live globe. Follow the ISS. Tap a city for weather. Listen to world radio. Optional NASA events overlay.",
       },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "WebApplication",
-          name: "Jumpify",
-          description:
-            "Explore wildfires, storms, volcanoes, floods and other natural events happening around the world on a live interactive map.",
-          applicationCategory: "ReferenceApplication",
-          operatingSystem: "Any",
-          offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-        }),
-      },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Home,
 });
 
-function MapFallback() {
-  return (
-    <div className="flex h-full w-full items-center justify-center bg-ocean">
-      <div className="px-6 text-center">
-        <p className="text-sm font-medium text-foreground">
-          Loading the live world map…
-        </p>
-        <p className="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
-          Jumpify shows wildfires, storms, volcanoes, floods and other natural
-          events happening around the world right now.
-        </p>
-      </div>
-    </div>
-  );
-}
-
 function Home() {
-  const now = useNow();
-  const [category, setCategory] = useState("all");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
+  const now = useNow(15_000);
+  const [theme, setTheme] = useTheme();
+  const [mode, setMode] = useState<Mode>("orbit");
+  const [inspect, setInspect] = useState<InspectTarget | null>(null);
+  const [playing, setPlaying] = useState<RadioStation | null>(null);
+  const [focus, setFocus] = useState<{ lng: number; lat: number; zoom?: number; nonce: number } | null>(null);
+  const [share] = useState(() =>
+    typeof window === "undefined" ? {} : parseShare(window.location.search),
+  );
+  const [dark, setDark] = useState(false);
 
-  const { data, error, refetch } = useQuery({
+  useEffect(() => {
+    if (share.mode && isMode(share.mode)) setMode(share.mode);
+  }, [share.mode]);
+
+  useEffect(() => {
+    setDark(resolveDark(theme));
+  }, [theme]);
+
+  const eventsQuery = useQuery({
     queryKey: ["events"],
-    queryFn: fetchEvents,
-    refetchInterval: 60_000,
-    staleTime: 30_000,
+    queryFn: () => getJson<EventsPayload>("/api/events"),
+    staleTime: 60_000,
+    refetchInterval: () => (document.hidden ? false : 60_000),
     retry: 1,
     placeholderData: (prev) => prev,
   });
+  const quakesQuery = useQuery({
+    queryKey: ["quakes"],
+    queryFn: () => getJson<QuakesPayload>("/api/quakes"),
+    staleTime: 60_000,
+    refetchInterval: () => (document.hidden ? false : 90_000),
+    retry: 1,
+    placeholderData: (prev) => prev,
+  });
+  const radioQuery = useQuery({
+    queryKey: ["radio"],
+    queryFn: () => getJson<RadioPayload>("/api/radio"),
+    staleTime: 10 * 60_000,
+    retry: 1,
+    placeholderData: (prev) => prev,
+  });
+  const issQuery = useQuery({
+    queryKey: ["iss"],
+    queryFn: () => getJson<IssPayload>("/api/iss"),
+    staleTime: 3_000,
+    refetchInterval: () => (document.hidden || mode !== "orbit" ? false : 5_000),
+    retry: 1,
+    placeholderData: (prev) => prev,
+    enabled: mode === "orbit",
+  });
 
-  const events = useMemo(() => data?.events ?? [], [data]);
+  const events = eventsQuery.data?.events ?? [];
+  const quakes = quakesQuery.data?.quakes ?? [];
+  const stations = radioQuery.data?.stations ?? [];
+  const iss = issQuery.data ?? null;
 
-  const { categories, counts } = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const ev of events) {
-      counts[ev.category] = (counts[ev.category] ?? 0) + 1;
+  const status = useMemo(() => {
+    if (mode === "orbit" && iss) {
+      return `ISS ${iss.latitude.toFixed(1)}°, ${iss.longitude.toFixed(1)}° · ${iss.altitude.toFixed(0)} km`;
     }
-    return { categories: Object.keys(counts), counts };
-  }, [events]);
+    if (mode === "pulse") {
+      const n = events.length + quakes.length;
+      const stamp = eventsQuery.data?.refreshedAt ?? quakesQuery.data?.refreshedAt;
+      return `${n} pulses · ${stamp ? `updated ${formatRelativeTime(stamp, now)}` : "loading"}`;
+    }
+    if (mode === "listen") {
+      return `${stations.length} stations with coordinates`;
+    }
+    return "Live globe";
+  }, [mode, iss, events.length, quakes.length, stations.length, eventsQuery.data, quakesQuery.data, now]);
 
-  const filtered = useMemo(
-    () =>
-      category === "all"
-        ? events
-        : events.filter((ev) => ev.category === category),
-    [events, category],
-  );
-
-  const selected = events.find((ev) => ev.id === selectedId) ?? null;
-
-  const handleFocus = (id: string) => {
-    setSelectedId(id);
-    setFocusRequest({ id, nonce: Date.now() });
+  const handleInspect = (target: InspectTarget) => {
+    setInspect(target);
+    if (target.kind === "place") {
+      setFocus({ lng: target.lng, lat: target.lat, zoom: 4, nonce: Date.now() });
+    }
+    if (target.kind === "event") {
+      const ev = events.find((e) => e.id === target.id);
+      if (ev) setFocus({ lng: ev.centroid[0], lat: ev.centroid[1], zoom: 4, nonce: Date.now() });
+    }
+    if (target.kind === "quake") {
+      const q = quakes.find((item) => item.id === target.id);
+      if (q) setFocus({ lng: q.lng, lat: q.lat, zoom: 4.5, nonce: Date.now() });
+    }
+    if (target.kind === "radio") {
+      const s = stations.find((item) => item.id === target.id);
+      if (s) setFocus({ lng: s.lng, lat: s.lat, zoom: 4, nonce: Date.now() });
+    }
+    if (target.kind === "iss" && iss) {
+      setFocus({ lng: iss.longitude, lat: iss.latitude, zoom: 3, nonce: Date.now() });
+    }
   };
 
   return (
-    <main className="relative h-dvh w-full overflow-hidden bg-ocean text-foreground">
-      {/* Map layer */}
+    <main className="relative h-dvh w-full overflow-hidden bg-ocean text-ink">
+      <h1 className="sr-only">Jumpify — poke the live planet</h1>
       <div className="absolute inset-0">
         <ClientOnly fallback={<MapFallback />}>
           <Suspense fallback={<MapFallback />}>
-            <EventMap
-              events={filtered}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-              focusRequest={focusRequest}
+            <Globe
+              mode={mode}
+              dark={dark}
+              events={events}
+              quakes={quakes}
+              stations={stations}
+              iss={iss}
+              onInspect={handleInspect}
+              focus={focus}
+              initial={
+                share.lng !== undefined && share.lat !== undefined
+                  ? { lng: share.lng, lat: share.lat, z: share.z ?? 1.35 }
+                  : undefined
+              }
+
             />
           </Suspense>
         </ClientOnly>
       </div>
 
-      {/* Header */}
-      <header className="absolute inset-x-0 top-0 z-20 border-b border-border bg-background/90 backdrop-blur-sm">
-        <div className="flex h-13 items-center justify-between gap-3 px-3 pt-2 pb-1.5 sm:px-5">
-          <div className="flex min-w-0 items-baseline gap-3">
-            <h1 className="text-[15px] font-bold tracking-[0.22em]">
-              JUMPIFY
-            </h1>
-            <p className="hidden text-[13px] text-muted-foreground sm:block">
-              The world, right now.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            {data && (
-              <span className="hidden md:inline">
-                <strong className="font-semibold text-foreground">
-                  {data.count.toLocaleString()}
-                </strong>{" "}
-                active events ·{" "}
-                <strong className="font-semibold text-foreground">
-                  {categories.length}
-                </strong>{" "}
-                categories
-              </span>
-            )}
-            <span className="flex items-center gap-1.5">
-              <span className="size-2 animate-pulse rounded-full bg-live" />
-              Live
-            </span>
-            {data && (
-              <span className="hidden font-mono text-[11px] sm:inline">
-                Updated {formatRelativeTime(data.refreshedAt, now)}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <FilterBar
-          categories={categories}
-          counts={counts}
-          total={events.length}
-          active={category}
-          onChange={setCategory}
-        />
-      </header>
-
-      {/* Latest events (desktop) */}
-      <RecentEvents
-        events={filtered}
-        selectedId={selectedId}
+      <Hud mode={mode} onMode={setMode} theme={theme} onTheme={setTheme} status={status} />
+      <Credits />
+      <DetailSheet
+        target={inspect}
+        events={events}
+        quakes={quakes}
+        stations={stations}
+        iss={iss}
         now={now}
-        onFocus={handleFocus}
+        onClose={() => setInspect(null)}
+        onPlayRadio={setPlaying}
       />
-
-      {/* Selected event details */}
-      {selected && (
-        <EventPanel event={selected} onClose={() => setSelectedId(null)} />
-      )}
-
-      {/* Attribution */}
-      <p className="pointer-events-none absolute bottom-2 left-3 z-10 text-[11px] text-muted-foreground/80">
-        Natural event data: NASA EONET
-      </p>
-
-      {/* Stale-data notice */}
-      {data?.stale && (
-        <div className="absolute bottom-8 left-1/2 z-20 w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-full border border-border bg-card px-3.5 py-1.5 text-center text-xs text-muted-foreground shadow-sm">
-          Unable to refresh events — showing the last successful update (
-          {formatRelativeTime(data.refreshedAt, now)}).
-        </div>
-      )}
-
-      {/* Hard failure: no cached dataset at all */}
-      {error && !data && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="mx-4 max-w-sm rounded-lg border border-border bg-card p-6 text-center shadow-sm">
-            <h2 className="text-base font-semibold">
-              Events are temporarily unavailable.
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Please try again shortly.
-            </p>
-            <button
-              type="button"
-              onClick={() => refetch()}
-              className="mt-4 h-9 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      )}
+      <RadioBar station={playing} onStop={() => setPlaying(null)} />
     </main>
   );
 }
