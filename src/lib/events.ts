@@ -156,7 +156,7 @@ export function weatherLabel(code: number | null): string {
 }
 
 export const MODE_COPY: Record<Mode, { label: string; line: string }> = {
-  orbit: { label: "Orbit", line: "ISS, day/night, the planet spinning." },
-  pulse: { label: "Pulse", line: "Quakes and named events — optional overlay." },
+  orbit: { label: "Orbit", line: "ISS, day/night, plus live named events." },
+  pulse: { label: "Pulse", line: "Quakes and named events, turned all the way up." },
   listen: { label: "Listen", line: "World radio. Tap a station, hear a city." },
 };

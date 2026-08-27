@@ -27,10 +27,16 @@ const LIGHT_STYLE = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.js
 const DARK_STYLE = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 const INDIA_URL = "/data/india-official.geojson";
 
-function indiaColors(dark: boolean): { fill: string; line: string } {
+function indiaColors(dark: boolean): { fill: string; line: string | maplibregl.ExpressionSpecification } {
   return dark
-    ? { fill: "#0e0e0e", line: "rgba(118,118,118,1)" }
-    : { fill: "#fafaf8", line: "#d9c4c6" };
+    ? {
+        fill: "#0e0e0e",
+        line: ["interpolate", ["linear"], ["zoom"], 4, "rgba(92, 94, 94, 1)", 5, "rgba(96, 96, 96, 1)", 6, "rgba(102, 102, 102, 1)"],
+      }
+    : {
+        fill: "#fafaf8",
+        line: ["interpolate", ["linear"], ["zoom"], 4, "#f2e6e7", 5, "#ebd6d8", 6, "#ebd6d8"],
+      };
 }
 
 function eventsCollection(events: JumpifyEvent[]): GeoJSON.FeatureCollection {
@@ -244,8 +250,8 @@ function setModeVisibility(map: MapLibreMap, mode: Mode): void {
   vis("iss-dot", mode === "orbit");
   vis("quakes-heat", mode === "pulse");
   vis("quakes-dot", mode === "pulse");
-  vis("events-glow", mode === "pulse");
-  vis("events-dot", mode === "pulse");
+  vis("events-glow", mode === "orbit" || mode === "pulse");
+  vis("events-dot", mode === "orbit" || mode === "pulse");
   vis("radio-dot", mode === "listen");
 }
 

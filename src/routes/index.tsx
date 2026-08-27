@@ -119,7 +119,7 @@ function Home() {
 
   const status = useMemo(() => {
     if (mode === "orbit" && iss) {
-      return `ISS ${iss.latitude.toFixed(1)}°, ${iss.longitude.toFixed(1)}° · ${iss.altitude.toFixed(0)} km`;
+      return `ISS ${iss.latitude.toFixed(1)}°, ${iss.longitude.toFixed(1)}° · ${iss.altitude.toFixed(0)} km · ${events.length} live events`;
     }
     if (mode === "pulse") {
       const n = events.length + quakes.length;
