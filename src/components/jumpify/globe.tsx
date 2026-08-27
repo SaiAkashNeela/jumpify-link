@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import maplibregl, { type Map as MapLibreMap, type StyleSpecification } from "maplibre-gl";
-import type { IssPayload, JumpifyEvent, Mode, Quake, RadioStation } from "@/lib/events";
+import type { IssPayload, JumpifyEvent, Mode, ProjectionChoice, Quake, RadioStation } from "@/lib/events";
+import { spaceportsCollection } from "@/lib/spaceports";
+import { cablesCollection } from "@/lib/cables";
 import { nightPolygon } from "@/lib/sun";
 import { writeShare } from "@/lib/share";
 
@@ -9,10 +11,13 @@ export type InspectTarget =
   | { kind: "event"; id: string }
   | { kind: "quake"; id: string }
   | { kind: "radio"; id: string }
+  | { kind: "spaceport"; id: string }
+  | { kind: "cable"; id: string }
   | { kind: "iss" };
 
 type GlobeProps = {
   mode: Mode;
+  projection: ProjectionChoice;
   dark: boolean;
   events: JumpifyEvent[];
   quakes: Quake[];
@@ -133,6 +138,57 @@ function ensureLayers(map: MapLibreMap, dark: boolean): void {
       paint: { "fill-color": "#0b1220", "fill-opacity": 0.28 },
     });
   }
+  if (!map.getSource("cables")) {
+    map.addSource("cables", { type: "geojson", data: cablesCollection() });
+    map.addLayer({
+      id: "cables-glow",
+      type: "line",
+      source: "cables",
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: {
+        "line-color": "#06b6d4",
+        "line-width": 3.5,
+        "line-opacity": 0.35,
+        "line-blur": 1.8,
+      },
+    });
+    map.addLayer({
+      id: "cables-line",
+      type: "line",
+      source: "cables",
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: {
+        "line-color": "#22d3ee",
+        "line-width": 1.6,
+        "line-opacity": 0.9,
+      },
+    });
+  }
+  if (!map.getSource("spaceports")) {
+    map.addSource("spaceports", { type: "geojson", data: spaceportsCollection() });
+    map.addLayer({
+      id: "spaceports-glow",
+      type: "circle",
+      source: "spaceports",
+      paint: {
+        "circle-radius": 11,
+        "circle-color": "#8b5cf6",
+        "circle-opacity": 0.25,
+        "circle-blur": 0.6,
+      },
+    });
+    map.addLayer({
+      id: "spaceports-dot",
+      type: "circle",
+      source: "spaceports",
+      paint: {
+        "circle-radius": 4.5,
+        "circle-color": "#a855f7",
+        "circle-stroke-width": 1.5,
+        "circle-stroke-color": "#ffffff",
+      },
+    });
+  }
   if (!map.getSource("events")) {
     map.addSource("events", { type: "geojson", data: eventsCollection([]) });
     map.addLayer({
@@ -248,6 +304,10 @@ function setModeVisibility(map: MapLibreMap, mode: Mode): void {
   vis("night-fill", true);
   vis("iss-glow", mode === "orbit");
   vis("iss-dot", mode === "orbit");
+  vis("spaceports-glow", mode === "orbit");
+  vis("spaceports-dot", mode === "orbit");
+  vis("cables-glow", mode === "cables");
+  vis("cables-line", mode === "cables");
   vis("quakes-heat", mode === "pulse");
   vis("quakes-dot", mode === "pulse");
   vis("events-glow", mode === "orbit" || mode === "pulse");
@@ -268,6 +328,7 @@ function setSourceData(
 
 export default function Globe({
   mode,
+  projection,
   dark,
   events,
   quakes,
@@ -282,6 +343,7 @@ export default function Globe({
   const onInspectRef = useRef(onInspect);
   const modeRef = useRef(mode);
   const darkRef = useRef(dark);
+  const projectionRef = useRef(projection);
   const readyRef = useRef(false);
 
   useEffect(() => {
@@ -295,6 +357,10 @@ export default function Globe({
   useEffect(() => {
     darkRef.current = dark;
   }, [dark]);
+
+  useEffect(() => {
+    projectionRef.current = projection;
+  }, [projection]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -313,7 +379,7 @@ export default function Globe({
     mapRef.current = map;
 
     const boot = () => {
-      map.setProjection({ type: "globe" });
+      map.setProjection({ type: projectionRef.current === "map" ? "mercator" : "globe" });
       const style = map.getStyle() as StyleSpecification;
       map.setSky({
         "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 5, 1, 8, 0],
@@ -325,10 +391,16 @@ export default function Globe({
       setModeVisibility(map, modeRef.current);
       readyRef.current = true;
     };
+
     const onClick = (e: maplibregl.MapMouseEvent) => {
-      const layers = ["iss-dot", "events-dot", "quakes-dot", "radio-dot"].filter((id) =>
-        map.getLayer(id),
-      );
+      const layers = [
+        "iss-dot",
+        "spaceports-dot",
+        "cables-line",
+        "events-dot",
+        "quakes-dot",
+        "radio-dot",
+      ].filter((id) => map.getLayer(id));
       const hits = layers.length ? map.queryRenderedFeatures(e.point, { layers }) : [];
       const hit = hits[0];
       if (hit?.layer?.id === "iss-dot") {
@@ -336,6 +408,17 @@ export default function Globe({
         return;
       }
       const hitId = hit?.properties ? hit.properties["id"] : undefined;
+      if (hit?.layer?.id === "spaceports-dot" && typeof hitId === "string") {
+        onInspectRef.current({ kind: "spaceport", id: hitId });
+        return;
+      }
+      if (
+        (hit?.layer?.id === "cables-line" || hit?.layer?.id === "cables-glow") &&
+        typeof hitId === "string"
+      ) {
+        onInspectRef.current({ kind: "cable", id: hitId });
+        return;
+      }
       if (hit?.layer?.id === "events-dot" && typeof hitId === "string") {
         onInspectRef.current({ kind: "event", id: hitId });
         return;
@@ -370,7 +453,7 @@ export default function Globe({
       map.remove();
       mapRef.current = null;
     };
-    // Map is created once; theme changes handled below.
+    // Map is created once; theme & projection changes handled below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -380,6 +463,12 @@ export default function Globe({
     readyRef.current = false;
     map.setStyle(dark ? DARK_STYLE : LIGHT_STYLE);
   }, [dark]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !readyRef.current) return;
+    map.setProjection({ type: projection === "map" ? "mercator" : "globe" });
+  }, [projection]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -431,7 +520,8 @@ export default function Globe({
     map.flyTo({
       center: [focus.lng, focus.lat],
       zoom: Math.max(map.getZoom(), focus.zoom ?? 3.4),
-      duration: 900,
+      duration: 1200,
+      essential: true,
     });
   }, [focus]);
 

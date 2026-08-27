@@ -9,6 +9,8 @@ import {
   type Quake,
   type RadioStation,
 } from "@/lib/events";
+import { SPACEPORTS } from "@/lib/spaceports";
+import { CABLES } from "@/lib/cables";
 import type { InspectTarget } from "@/components/jumpify/globe";
 
 type Props = {
@@ -33,6 +35,51 @@ export function DetailSheet({
   onPlayRadio,
 }: Props) {
   if (!target) return null;
+
+  if (target.kind === "spaceport") {
+    const sp = SPACEPORTS.find((s) => s.id === target.id);
+    if (!sp) return null;
+    return (
+      <Inspector
+        title={sp.name}
+        kicker={`Orbital Spaceport · ${sp.country}`}
+        onClose={onClose}
+        footer="Spaceport data: Global Launch Registry"
+      >
+        <Field label="Operator" value={sp.operator} />
+        <Field label="Rockets" value={sp.rockets.join(", ")} />
+        <Field label="Coordinates" value={`${sp.lat.toFixed(3)}°, ${sp.lng.toFixed(3)}°`} />
+        <p className="text-muted text-xs leading-relaxed">{sp.description}</p>
+        <a
+          href={sp.wikiUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex h-9 items-center rounded-lg border border-rule px-3 text-sm font-medium hover:bg-paper-2"
+        >
+          Wikipedia page
+        </a>
+      </Inspector>
+    );
+  }
+
+  if (target.kind === "cable") {
+    const cable = CABLES.find((c) => c.id === target.id);
+    if (!cable) return null;
+    return (
+      <Inspector
+        title={cable.name}
+        kicker="Subsea Optical Fiber"
+        onClose={onClose}
+        footer="Submarine cable data: TeleGeography Open"
+      >
+        <Field label="Length" value={`${cable.lengthKm.toLocaleString()} km`} />
+        <Field label="Ready" value={String(cable.readyYear)} />
+        <Field label="Owners" value={cable.owners} />
+        <Field label="Landing points" value={cable.landingPoints.join(" · ")} />
+        <p className="text-muted text-xs leading-relaxed">{cable.description}</p>
+      </Inspector>
+    );
+  }
 
   if (target.kind === "event") {
     const event = events.find((e) => e.id === target.id);

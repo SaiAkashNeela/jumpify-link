@@ -7,8 +7,12 @@ import { RadioBar } from "@/components/jumpify/radio-bar";
 import { Credits } from "@/components/jumpify/credits";
 import { useNow } from "@/hooks/use-now";
 import { useTheme } from "@/hooks/use-theme";
+import { useProjection } from "@/hooks/use-projection";
 import { parseShare } from "@/lib/share";
 import { resolveDark } from "@/lib/theme";
+import { SPACEPORTS } from "@/lib/spaceports";
+import { CABLES } from "@/lib/cables";
+import { getRandomWonder } from "@/lib/wonders";
 import {
   formatRelativeTime,
   isMode,
@@ -32,7 +36,7 @@ async function getJson<T>(url: string): Promise<T> {
 function MapFallback() {
   return (
     <div className="flex h-full w-full items-center justify-center bg-ocean">
-      <p className="px-6 text-center text-sm text-muted">Spinning up the globe…</p>
+      <p className="px-6 text-center text-sm text-muted">Spinning up the planet…</p>
     </div>
   );
 }
@@ -44,13 +48,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "An interactive globe for ISS orbit, earthquakes, named natural events, world radio, and tap-anywhere weather. Free, no account.",
+          "An interactive 3D globe & 2D flat map for ISS orbit, spaceports, earthquakes, natural disasters, undersea internet cables, world radio, and tap-anywhere weather.",
       },
       { property: "og:title", content: "Jumpify — poke the live planet" },
       {
         property: "og:description",
         content:
-          "Spin a live globe. Follow the ISS. Tap a city for weather. Listen to world radio. Optional NASA events overlay.",
+          "Explore the planet in 3D or 2D. Follow the ISS & spaceports. Inspect undersea fiber cables. Tap anywhere for weather & history. Listen to live world radio.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -62,6 +66,7 @@ export const Route = createFileRoute("/")({
 function Home() {
   const now = useNow(15_000);
   const [theme, setTheme] = useTheme();
+  const [projection, setProjection] = useProjection();
   const [mode, setMode] = useState<Mode>("orbit");
   const [inspect, setInspect] = useState<InspectTarget | null>(null);
   const [playing, setPlaying] = useState<RadioStation | null>(null);
@@ -119,23 +124,37 @@ function Home() {
 
   const status = useMemo(() => {
     if (mode === "orbit" && iss) {
-      return `ISS ${iss.latitude.toFixed(1)}°, ${iss.longitude.toFixed(1)}° · ${iss.altitude.toFixed(0)} km · ${events.length} live events`;
+      return `ISS ${iss.latitude.toFixed(1)}°, ${iss.longitude.toFixed(1)}° · ${iss.altitude.toFixed(0)} km · ${SPACEPORTS.length} spaceports`;
     }
     if (mode === "pulse") {
       const n = events.length + quakes.length;
       const stamp = eventsQuery.data?.refreshedAt ?? quakesQuery.data?.refreshedAt;
-      return `${n} pulses · ${stamp ? `updated ${formatRelativeTime(stamp, now)}` : "loading"}`;
+      return `${n} natural pulses · ${stamp ? `updated ${formatRelativeTime(stamp, now)}` : "loading"}`;
+    }
+    if (mode === "cables") {
+      return `${CABLES.length} transoceanic optical submarine cables`;
     }
     if (mode === "listen") {
-      return `${stations.length} stations with coordinates`;
+      return `${stations.length} radio stations live with coordinates`;
     }
-    return "Live globe";
+    return "Live planet";
   }, [mode, iss, events.length, quakes.length, stations.length, eventsQuery.data, quakesQuery.data, now]);
 
   const handleInspect = (target: InspectTarget) => {
     setInspect(target);
     if (target.kind === "place") {
-      setFocus({ lng: target.lng, lat: target.lat, zoom: 4, nonce: Date.now() });
+      setFocus({ lng: target.lng, lat: target.lat, zoom: 4.5, nonce: Date.now() });
+    }
+    if (target.kind === "spaceport") {
+      const sp = SPACEPORTS.find((s) => s.id === target.id);
+      if (sp) setFocus({ lng: sp.lng, lat: sp.lat, zoom: 5.5, nonce: Date.now() });
+    }
+    if (target.kind === "cable") {
+      const c = CABLES.find((item) => item.id === target.id);
+      if (c && c.coordinates[0]) {
+        const mid = c.coordinates[Math.floor(c.coordinates.length / 2)]!;
+        setFocus({ lng: mid[0], lat: mid[1], zoom: 3.5, nonce: Date.now() });
+      }
     }
     if (target.kind === "event") {
       const ev = events.find((e) => e.id === target.id);
@@ -154,6 +173,12 @@ function Home() {
     }
   };
 
+  const handleTeleport = () => {
+    const spot = getRandomWonder();
+    setFocus({ lng: spot.lng, lat: spot.lat, zoom: spot.zoom, nonce: Date.now() });
+    setInspect({ kind: "place", lng: spot.lng, lat: spot.lat });
+  };
+
   return (
     <main className="relative h-dvh w-full overflow-hidden bg-ocean text-ink">
       <h1 className="sr-only">Jumpify — poke the live planet</h1>
@@ -162,6 +187,7 @@ function Home() {
           <Suspense fallback={<MapFallback />}>
             <Globe
               mode={mode}
+              projection={projection}
               dark={dark}
               events={events}
               quakes={quakes}
@@ -174,13 +200,21 @@ function Home() {
                   ? { lng: share.lng, lat: share.lat, z: share.z ?? 1.35 }
                   : undefined
               }
-
             />
           </Suspense>
         </ClientOnly>
       </div>
 
-      <Hud mode={mode} onMode={setMode} theme={theme} onTheme={setTheme} status={status} />
+      <Hud
+        mode={mode}
+        onMode={setMode}
+        projection={projection}
+        onProjection={setProjection}
+        onTeleport={handleTeleport}
+        theme={theme}
+        onTheme={setTheme}
+        status={status}
+      />
       <Credits />
       <DetailSheet
         target={inspect}

@@ -1,7 +1,7 @@
 export function Credits() {
   return (
-    <p className="pointer-events-auto absolute bottom-3 left-3 z-10 hidden max-w-[46vw] text-[10px] leading-snug text-muted sm:block">
-      Basemap © CARTO, © OpenStreetMap · India outline Survey of India / Datameet · Events NASA EONET · Quakes USGS · Weather Open-Meteo · ISS Where The ISS At · Radio Browser
+    <p className="pointer-events-auto absolute bottom-3 left-3 z-10 hidden max-w-[50vw] text-[10px] leading-snug text-muted sm:block">
+      Basemap © CARTO, © OpenStreetMap · India outline Survey of India / Datameet · Events NASA EONET · Quakes USGS · Weather Open-Meteo · Subsea Cables TeleGeography · ISS Where The ISS At · Radio Browser
     </p>
   );
 }

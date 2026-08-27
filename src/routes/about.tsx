@@ -7,7 +7,8 @@ export const Route = createFileRoute("/about")({
       { title: "About Jumpify" },
       {
         name: "description",
-        content: "Jumpify is a free interactive globe for ISS orbit, earthquakes, radio, and tap-anywhere weather.",
+        content:
+          "Jumpify is a free interactive 3D globe and 2D flat map for ISS orbit, spaceports, earthquakes, undersea internet cables, world radio, and tap-anywhere weather.",
       },
     ],
   }),
@@ -23,33 +24,32 @@ function About() {
       </Link>
       <h1 className="mt-8 font-display text-3xl font-semibold tracking-tight">The world, poked.</h1>
       <p className="mt-4 text-muted">
-        Jumpify is a one-page globe you can spin with a thumb. The default view is Orbit: day/night terminator plus the
-        International Space Station. Pulse adds USGS earthquakes and NASA EONET named events as an optional overlay.
-        Listen plots world radio stations. Tap anywhere for local time, weather, air quality, and a nearby Wikipedia
-        extract.
+        Jumpify is a live planetary playground you can explore in <strong>3D Globe</strong> or <strong>2D Flat Map</strong> projection.
+        Switch modes to inspect real-time satellite orbits, global space launchpads, USGS earthquakes, NASA disaster events,
+        transoceanic submarine fiber cables, or live world radio. Tap anywhere on Earth to read local weather, time, US AQI, and Wikipedia history.
       </p>
-      <p className="mt-4 text-muted">
-        Named disasters are not the homepage. EONET is a curated list, often sparse. An empty globe looks broken, so
-        Orbit stays visually busy even on a quiet day.
-      </p>
+
+      <h2 className="mt-8 text-lg font-semibold">Modes & Layers</h2>
+      <ul className="mt-2 list-disc space-y-2 pl-5 text-muted">
+        <li><strong>Orbit:</strong> Real-time International Space Station tracker, major orbital spaceports (NASA KSC, Cape Canaveral, ISRO Sriharikota, ESA Kourou, SpaceX Starbase, Baikonur), and dynamic day/night terminator.</li>
+        <li><strong>Pulse:</strong> Live USGS earthquake seismicity heatmap & NASA EONET natural disaster telemetry (wildfires, volcanoes, storms).</li>
+        <li><strong>Cables:</strong> Physical internet infrastructure — glowing transoceanic subsea fiber optic cables connecting continents.</li>
+        <li><strong>Listen:</strong> Live world radio streaming from stations worldwide via Radio Browser.</li>
+        <li><strong>Jump (🎲):</strong> Instant teleport to curated Earth wonders, deep ocean trenches, and historic landmarks.</li>
+      </ul>
+
       <h2 className="mt-8 text-lg font-semibold">Who runs this</h2>
       <p className="mt-2 text-muted">
         Open-source project at{" "}
-        <a className="underline" href="https://github.com/SaiAkashNeela/jumpify-link">
+        <a className="underline" href="https://github.com/SaiAkashNeela/jumpify-link" target="_blank" rel="noreferrer">
           github.com/SaiAkashNeela/jumpify-link
         </a>
-        . No accounts. No tracking pixels. Theme preference lives in localStorage under{" "}
-        <code className="font-mono text-[13px]">jumpify_theme_v1</code>.
+        . No accounts. No tracking pixels.
       </p>
-      <h2 className="mt-8 text-lg font-semibold">When to use it</h2>
-      <ul className="mt-2 list-disc space-y-1 pl-5 text-muted">
-        <li>You want a live planet on a phone without an account.</li>
-        <li>You need a shareable camera URL (mode + lat/lng/zoom).</li>
-        <li>You want keyless public data, proxied so browsers never hammer NASA or USGS.</li>
-      </ul>
+
       <p className="mt-6 text-sm">
         <Link to="/" className="underline">
-          Back to the globe
+          ← Back to the planet
         </Link>
       </p>
     </article>

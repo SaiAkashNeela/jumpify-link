@@ -1,9 +1,12 @@
-export const MODES = ["orbit", "pulse", "listen"] as const;
+export const MODES = ["orbit", "pulse", "cables", "listen"] as const;
 export type Mode = (typeof MODES)[number];
 
 export function isMode(value: string | null | undefined): value is Mode {
-  return value === "orbit" || value === "pulse" || value === "listen";
+  return value === "orbit" || value === "pulse" || value === "cables" || value === "listen";
 }
+
+export type ProjectionChoice = "globe" | "map";
+export const PROJECTION_STORAGE_KEY = "jumpify_projection_v1";
 
 export type ThemeChoice = "system" | "light" | "dark";
 export const THEME_STORAGE_KEY = "jumpify_theme_v1";
@@ -156,7 +159,8 @@ export function weatherLabel(code: number | null): string {
 }
 
 export const MODE_COPY: Record<Mode, { label: string; line: string }> = {
-  orbit: { label: "Orbit", line: "ISS, day/night, plus live named events." },
-  pulse: { label: "Pulse", line: "Quakes and named events, turned all the way up." },
-  listen: { label: "Listen", line: "World radio. Tap a station, hear a city." },
+  orbit: { label: "Orbit", line: "ISS real-time tracking, orbital spaceports & day/night line." },
+  pulse: { label: "Pulse", line: "Live USGS earthquakes & NASA disaster activity worldwide." },
+  cables: { label: "Cables", line: "Transoceanic subsea fiber optic cables connecting continents." },
+  listen: { label: "Listen", line: "Live world radio. Tap any station to stream local audio." },
 };
