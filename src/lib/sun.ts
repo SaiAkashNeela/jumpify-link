@@ -1,4 +1,4 @@
-/** Approximate subsolar point + night-side polygon for the terminator overlay. */
+/** Approximate subsolar point + night-side polygon & twilight terminator line. */
 
 function julianDay(date: Date): number {
   return date.getTime() / 86400000 + 2440587.5;
@@ -32,6 +32,22 @@ export function nightPolygon(date = new Date()): GeoJSON.Feature<GeoJSON.Polygon
     type: "Feature",
     properties: {},
     geometry: { type: "Polygon", coordinates: [coords] },
+  };
+}
+
+export function terminatorLine(date = new Date()): GeoJSON.Feature<GeoJSON.LineString> {
+  const sun = subsolarPoint(date);
+  const coords: [number, number][] = [];
+  const steps = 96;
+  for (let i = 0; i <= steps; i++) {
+    const bearing = (i / steps) * 360;
+    const p = destination(sun.lat, sun.lng, 90, bearing);
+    coords.push([p.lng, p.lat]);
+  }
+  return {
+    type: "Feature",
+    properties: {},
+    geometry: { type: "LineString", coordinates: coords },
   };
 }
 

@@ -3,7 +3,8 @@ import maplibregl, { type Map as MapLibreMap, type StyleSpecification } from "ma
 import type { IssPayload, JumpifyEvent, Mode, ProjectionChoice, Quake, RadioStation } from "@/lib/events";
 import { spaceportsCollection } from "@/lib/spaceports";
 import { cablesCollection } from "@/lib/cables";
-import { nightPolygon } from "@/lib/sun";
+import { oceanWavesCollection } from "@/lib/waves";
+import { nightPolygon, terminatorLine } from "@/lib/sun";
 import { writeShare } from "@/lib/share";
 
 export type InspectTarget =
@@ -40,7 +41,7 @@ function indiaColors(dark: boolean): { fill: string; line: string | maplibregl.E
       }
     : {
         fill: "#fafaf8",
-        line: ["interpolate", ["linear"], ["zoom"], 4, "#f2e6e7", 5, "#ebd6d8", 6, "#ebd6d8"],
+        line: ["interpolate", ["linear"], ["zoom"], 4, "#e2d5c3", 5, "#d6c5b0", 6, "#d6c5b0"],
       };
 }
 
@@ -129,15 +130,72 @@ function ensureIndia(map: MapLibreMap, dark: boolean): void {
 
 function ensureLayers(map: MapLibreMap, dark: boolean): void {
   ensureIndia(map, dark);
+
+  // Ocean wave currents
+  if (!map.getSource("waves")) {
+    map.addSource("waves", { type: "geojson", data: oceanWavesCollection() });
+    map.addLayer({
+      id: "waves-line",
+      type: "line",
+      source: "waves",
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: {
+        "line-color": dark ? "#38bdf8" : "#0284c7",
+        "line-opacity": dark ? 0.22 : 0.26,
+        "line-width": 1.4,
+        "line-dasharray": [3, 5],
+      },
+    });
+  } else {
+    map.setPaintProperty("waves-line", "line-color", dark ? "#38bdf8" : "#0284c7");
+    map.setPaintProperty("waves-line", "line-opacity", dark ? 0.22 : 0.26);
+  }
+
+  // Day / Night terminator polygon & golden sunrise/sunset line
   if (!map.getSource("night")) {
     map.addSource("night", { type: "geojson", data: nightPolygon() });
     map.addLayer({
       id: "night-fill",
       type: "fill",
       source: "night",
-      paint: { "fill-color": "#0b1220", "fill-opacity": 0.28 },
+      paint: {
+        "fill-color": dark ? "#020408" : "#1e293b",
+        "fill-opacity": dark ? 0.42 : 0.12,
+      },
+    });
+  } else {
+    map.setPaintProperty("night-fill", "fill-color", dark ? "#020408" : "#1e293b");
+    map.setPaintProperty("night-fill", "fill-opacity", dark ? 0.42 : 0.12);
+  }
+
+  if (!map.getSource("terminator")) {
+    map.addSource("terminator", { type: "geojson", data: terminatorLine() });
+    map.addLayer({
+      id: "terminator-glow",
+      type: "line",
+      source: "terminator",
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: {
+        "line-color": "#f59e0b",
+        "line-width": 4.5,
+        "line-opacity": dark ? 0.35 : 0.25,
+        "line-blur": 2.5,
+      },
+    });
+    map.addLayer({
+      id: "terminator-line",
+      type: "line",
+      source: "terminator",
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: {
+        "line-color": "#fbbf24",
+        "line-width": 1.4,
+        "line-opacity": dark ? 0.8 : 0.65,
+      },
     });
   }
+
+  // Subsea Cables
   if (!map.getSource("cables")) {
     map.addSource("cables", { type: "geojson", data: cablesCollection() });
     map.addLayer({
@@ -164,6 +222,8 @@ function ensureLayers(map: MapLibreMap, dark: boolean): void {
       },
     });
   }
+
+  // Spaceports
   if (!map.getSource("spaceports")) {
     map.addSource("spaceports", { type: "geojson", data: spaceportsCollection() });
     map.addLayer({
@@ -189,6 +249,8 @@ function ensureLayers(map: MapLibreMap, dark: boolean): void {
       },
     });
   }
+
+  // NASA EONET Events
   if (!map.getSource("events")) {
     map.addSource("events", { type: "geojson", data: eventsCollection([]) });
     map.addLayer({
@@ -214,6 +276,8 @@ function ensureLayers(map: MapLibreMap, dark: boolean): void {
       },
     });
   }
+
+  // USGS Earthquakes
   if (!map.getSource("quakes")) {
     map.addSource("quakes", { type: "geojson", data: quakesCollection([]) });
     map.addLayer({
@@ -254,6 +318,8 @@ function ensureLayers(map: MapLibreMap, dark: boolean): void {
       },
     });
   }
+
+  // Radio Browser
   if (!map.getSource("radio")) {
     map.addSource("radio", { type: "geojson", data: radioCollection([]) });
     map.addLayer({
@@ -268,6 +334,8 @@ function ensureLayers(map: MapLibreMap, dark: boolean): void {
       },
     });
   }
+
+  // ISS
   if (!map.getSource("iss")) {
     map.addSource("iss", { type: "geojson", data: issCollection(null) });
     map.addLayer({
@@ -301,7 +369,10 @@ function setModeVisibility(map: MapLibreMap, mode: Mode): void {
       map.setLayoutProperty(id, "visibility", on ? "visible" : "none");
     }
   };
+  vis("waves-line", true);
   vis("night-fill", true);
+  vis("terminator-glow", true);
+  vis("terminator-line", true);
   vis("iss-glow", mode === "orbit");
   vis("iss-dot", mode === "orbit");
   vis("spaceports-glow", mode === "orbit");
@@ -365,14 +436,16 @@ export default function Globe({
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return undefined;
+    const defaultZoom = typeof window !== "undefined" && window.innerWidth < 640 ? 1.65 : 2.05;
     const map = new maplibregl.Map({
       container: el,
       style: dark ? DARK_STYLE : LIGHT_STYLE,
       center: [initial?.lng ?? 12, initial?.lat ?? 18],
-      zoom: initial?.z ?? 1.35,
-      minZoom: 0.6,
-      maxZoom: 12,
+      zoom: initial?.z ?? defaultZoom,
+      minZoom: 0.8,
+      maxZoom: 13,
       attributionControl: false,
+      renderWorldCopies: false,
       pitch: 0,
       maxPitch: 80,
     });
@@ -508,6 +581,7 @@ export default function Globe({
     const tick = () => {
       if (!readyRef.current) return;
       setSourceData(map, "night", nightPolygon());
+      setSourceData(map, "terminator", terminatorLine());
     };
     const id = window.setInterval(tick, 60_000);
     tick();
@@ -519,7 +593,7 @@ export default function Globe({
     if (!map || !focus) return;
     map.flyTo({
       center: [focus.lng, focus.lat],
-      zoom: Math.max(map.getZoom(), focus.zoom ?? 3.4),
+      zoom: Math.max(map.getZoom(), focus.zoom ?? 3.8),
       duration: 1200,
       essential: true,
     });
@@ -530,7 +604,7 @@ export default function Globe({
       ref={containerRef}
       className="absolute inset-0 h-full w-full"
       role="application"
-      aria-label="Interactive globe"
+      aria-label="Interactive planet"
     />
   );
 }
