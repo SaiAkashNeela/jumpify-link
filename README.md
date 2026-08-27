@@ -63,7 +63,7 @@ Open-Meteo and OpenSky free use is typically non-commercial; this site is non-co
 
 ## Attribution
 
-Basemap © CARTO, © OpenStreetMap contributors. Events: NASA EONET (no NASA endorsement). Earthquakes: USGS. Weather / AQI: Open-Meteo. ISS: Where The ISS At. Stations: Radio Browser. Wikipedia extracts: Wikimedia.
+Basemap © CARTO, © OpenStreetMap contributors. India outline: [Datameet composite](https://github.com/datameet/maps/blob/master/Country/README.md) matching the [Survey of India](https://www.surveyofindia.gov.in/) claim (Jammu & Kashmir, Ladakh, Gilgit-Baltistan, Aksai Chin). Events: NASA EONET (no NASA endorsement). Earthquakes: USGS. Weather / AQI: Open-Meteo. ISS: Where The ISS At. Stations: Radio Browser. Wikipedia extracts: Wikimedia.
 
 Do not use the NASA logo.
 

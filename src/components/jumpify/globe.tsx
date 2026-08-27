@@ -25,6 +25,13 @@ type GlobeProps = {
 
 const LIGHT_STYLE = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 const DARK_STYLE = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
+const INDIA_URL = "/data/india-official.geojson";
+
+function indiaColors(dark: boolean): { fill: string; line: string } {
+  return dark
+    ? { fill: "#0e0e0e", line: "rgba(118,118,118,1)" }
+    : { fill: "#fafaf8", line: "#d9c4c6" };
+}
 
 function eventsCollection(events: JumpifyEvent[]): GeoJSON.FeatureCollection {
   return {
@@ -73,7 +80,44 @@ function issCollection(iss: IssPayload | null): GeoJSON.FeatureCollection {
   };
 }
 
-function ensureLayers(map: MapLibreMap): void {
+function ensureIndia(map: MapLibreMap, dark: boolean): void {
+  const { fill, line } = indiaColors(dark);
+  const beforeLabels = map.getLayer("watername_ocean") ? "watername_ocean" : undefined;
+  if (!map.getSource("india")) {
+    map.addSource("india", { type: "geojson", data: INDIA_URL });
+    map.addLayer(
+      {
+        id: "india-fill",
+        type: "fill",
+        source: "india",
+        paint: {
+          "fill-color": fill,
+          "fill-opacity": ["interpolate", ["linear"], ["zoom"], 0, 1, 5, 1, 8, 0],
+        },
+      },
+      beforeLabels,
+    );
+    map.addLayer(
+      {
+        id: "india-outline",
+        type: "line",
+        source: "india",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": line,
+          "line-width": ["interpolate", ["linear"], ["zoom"], 3, 1, 6, 1.5],
+        },
+      },
+      beforeLabels,
+    );
+  } else {
+    map.setPaintProperty("india-fill", "fill-color", fill);
+    map.setPaintProperty("india-outline", "line-color", line);
+  }
+}
+
+function ensureLayers(map: MapLibreMap, dark: boolean): void {
+  ensureIndia(map, dark);
   if (!map.getSource("night")) {
     map.addSource("night", { type: "geojson", data: nightPolygon() });
     map.addLayer({
@@ -231,6 +275,7 @@ export default function Globe({
   const mapRef = useRef<MapLibreMap | null>(null);
   const onInspectRef = useRef(onInspect);
   const modeRef = useRef(mode);
+  const darkRef = useRef(dark);
   const readyRef = useRef(false);
 
   useEffect(() => {
@@ -240,6 +285,10 @@ export default function Globe({
   useEffect(() => {
     modeRef.current = mode;
   }, [mode]);
+
+  useEffect(() => {
+    darkRef.current = dark;
+  }, [dark]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -266,7 +315,7 @@ export default function Globe({
       if (style) {
         /* sky applied */
       }
-      ensureLayers(map);
+      ensureLayers(map, darkRef.current);
       setModeVisibility(map, modeRef.current);
       readyRef.current = true;
     };
